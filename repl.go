@@ -3,8 +3,11 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"os"
 	"strings"
+
+	pokiapi "github.com/AhmadWork/pokedx/internal/pokeApi"
 )
 
 type CliCommand struct {
@@ -24,6 +27,25 @@ type CliCommand struct {
         desc: "show the help menu of pokidex",
         callback: helpFunc,
     },
+     "map":{
+        name: "map",
+        desc: "show the next 20 locations of the pokimon world",
+        callback: mapFunc,
+    },
+     "mapb":{
+        name: "mapb",
+        desc: "show the previous 20 locations of the pokimon world",
+        callback: mapbFunc,
+    },
+}
+
+type Map struct {
+    next string
+    prev string
+}
+
+var mapStatus Map = Map{
+    next: "https://pokeapi.co/api/v2/location-area/",
 }
 
 func startRepl() {
@@ -47,7 +69,10 @@ func startRepl() {
             continue
         }
 
-        command.callback()
+        err := command.callback()
+        if err != nil {
+            log.Fatal(err)
+        }
     }
 }
 
@@ -70,3 +95,47 @@ func helpFunc() error {
     fmt.Println("")
     return nil
 }
+
+func mapFunc() error {
+    res, err :=  pokiapi.GetLocations(mapStatus.next)
+    
+    if err != nil {
+        return err
+    }
+    fmt.Println("Areas of the Poki worlds:")
+    fmt.Println("-------------------------")
+    for _, loc := range res.Results {
+        fmt.Println(loc.Name)
+    }
+   mapPrev, ok := res.Previous.(string)
+    if !ok {
+        mapStatus.prev = "https://pokeapi.co/api/v2/location-area/"
+    } else {
+        mapStatus.prev = mapPrev
+    }
+    mapStatus.next = res.Next
+    return nil
+}
+
+func mapbFunc() error {
+    res, err :=  pokiapi.GetLocations(mapStatus.prev)
+    
+    if err != nil {
+        return err
+    }
+    fmt.Println("Areas of the Poki worlds:")
+    fmt.Println("-------------------------")
+    for _, loc := range res.Results {
+        fmt.Println(loc.Name)
+    }
+   mapPrev, ok := res.Previous.(string)
+    if !ok {
+        mapStatus.prev = "https://pokeapi.co/api/v2/location-area/"
+    } else {
+        mapStatus.prev = mapPrev
+    }
+    mapStatus.next = res.Next
+
+    return nil
+}
+
