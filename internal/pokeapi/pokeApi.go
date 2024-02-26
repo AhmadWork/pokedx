@@ -7,6 +7,9 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"time"
+
+	"github.com/AhmadWork/pokedx/internal/pokecache"
 )
 
 type LocationsResponse struct {
@@ -19,8 +22,31 @@ type LocationsResponse struct {
 	} `json:"results"`
 }
 
-func GetLocations(url string) (LocationsResponse, error) {
-	res, err := http.Get(url)
+type PokiClient struct {
+    Cache pokecache.Cache
+    httpClient http.Client
+}
+
+func NewClient(cacheInt time.Duration ) PokiClient {
+    return PokiClient{
+        Cache: pokecache.NewCache(cacheInt),
+        httpClient: http.Client{
+            Timeout: time.Minute*2,
+        },
+    }
+}
+
+func (p *PokiClient)  GetLocations(url string) (LocationsResponse, error) {
+    loc := LocationsResponse{}
+    cRes,ok := p.Cache.Get(url)
+    if ok {
+        error := json.Unmarshal(cRes, &loc)
+        if error != nil {
+		log.Fatal(error)        
+        }
+        return loc, nil
+    }
+	res, err := p.httpClient.Get(url)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -39,7 +65,6 @@ func GetLocations(url string) (LocationsResponse, error) {
         return zeroLocations, errors.New(errorMessage)
 
 	}
-    loc := LocationsResponse{}
     err = json.Unmarshal(body, &loc)
 
     if err != nil {
@@ -49,6 +74,6 @@ func GetLocations(url string) (LocationsResponse, error) {
         return zeroLocations, errors.New(errorMessage)
 
     }
-
+    p.Cache.Add(url, body)
     return loc, nil
 }

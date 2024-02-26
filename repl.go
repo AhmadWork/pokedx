@@ -6,14 +6,12 @@ import (
 	"log"
 	"os"
 	"strings"
-
-	pokiapi "github.com/AhmadWork/pokedx/internal/pokeApi"
 )
 
 type CliCommand struct {
     name string
     desc string
-    callback func() error
+    callback func(*Config) error
 }
 
  var commands map[string]CliCommand= map[string]CliCommand{
@@ -39,16 +37,11 @@ type CliCommand struct {
     },
 }
 
-type Map struct {
-    next string
-    prev string
-}
 
-var mapStatus Map = Map{
-    next: "https://pokeapi.co/api/v2/location-area/",
-}
 
-func startRepl() {
+
+
+func startRepl(cfg *Config) {
     scanner := bufio.NewScanner(os.Stdin)
     fmt.Println("What pokimon you are looking for ?")
     for{
@@ -69,7 +62,7 @@ func startRepl() {
             continue
         }
 
-        err := command.callback()
+        err := command.callback(cfg)
         if err != nil {
             log.Fatal(err)
         }
@@ -82,12 +75,12 @@ func cleanInput (str string) []string {
     return words
 }
 
-func exitFunc() error {
+func exitFunc(cfg *Config) error {
     os.Exit(0)
     return nil
 }
 
-func helpFunc() error {
+func helpFunc(cfg *Config) error {
     fmt.Println("Welcome to the help menu of Pokidex")
     fmt.Println("the available commands are:")
     fmt.Println("- exit")
@@ -96,8 +89,8 @@ func helpFunc() error {
     return nil
 }
 
-func mapFunc() error {
-    res, err :=  pokiapi.GetLocations(mapStatus.next)
+func mapFunc(cfg *Config) error {
+    res, err :=  cfg.api.GetLocations(cfg.next)
     
     if err != nil {
         return err
@@ -109,16 +102,16 @@ func mapFunc() error {
     }
    mapPrev, ok := res.Previous.(string)
     if !ok {
-        mapStatus.prev = "https://pokeapi.co/api/v2/location-area/"
+        cfg.prev = "https://pokeapi.co/api/v2/location-area/"
     } else {
-        mapStatus.prev = mapPrev
+        cfg.prev = mapPrev
     }
-    mapStatus.next = res.Next
+    cfg.next = res.Next
     return nil
 }
 
-func mapbFunc() error {
-    res, err :=  pokiapi.GetLocations(mapStatus.prev)
+func mapbFunc(cfg *Config) error {
+    res, err :=  cfg.api.GetLocations(cfg.prev)
     
     if err != nil {
         return err
@@ -130,11 +123,11 @@ func mapbFunc() error {
     }
    mapPrev, ok := res.Previous.(string)
     if !ok {
-        mapStatus.prev = "https://pokeapi.co/api/v2/location-area/"
+        cfg.prev = "https://pokeapi.co/api/v2/location-area/"
     } else {
-        mapStatus.prev = mapPrev
+        cfg.prev = mapPrev
     }
-    mapStatus.next = res.Next
+    cfg.next = res.Next
 
     return nil
 }
