@@ -12,6 +12,7 @@ type CliCommand struct {
     name string
     desc string
     callback func(*Config) error
+    withParam bool
 }
 
  var commands map[string]CliCommand= map[string]CliCommand{
@@ -35,6 +36,13 @@ type CliCommand struct {
         desc: "show the previous 20 locations of the pokimon world",
         callback: mapbFunc,
     },
+    "explore":{
+        name: "explore",
+        desc: "show the previous 20 locations of the pokimon world",
+        callback: exploreFunc,
+        withParam: true,
+    },
+
 }
 
 
@@ -61,10 +69,16 @@ func startRepl(cfg *Config) {
             fmt.Println("use help to find the available commands")
             continue
         }
-
+        if command.withParam {
+            if len(cleaned) < 2{
+                fmt.Println("Command param is missing please add the area to explore it")
+                continue
+            }
+            cfg.param = cleaned[1]
+        }
         err := command.callback(cfg)
-        if err != nil {
-            log.Fatal(err)
+            if err != nil {
+                log.Fatal(err)
         }
     }
 }
@@ -111,6 +125,10 @@ func mapFunc(cfg *Config) error {
 }
 
 func mapbFunc(cfg *Config) error {
+    if len(cfg.prev) == 0 {
+        fmt.Println("you can't go back before starting")
+        return nil
+    }
     res, err :=  cfg.api.GetLocations(cfg.prev)
     
     if err != nil {
@@ -132,3 +150,18 @@ func mapbFunc(cfg *Config) error {
     return nil
 }
 
+func exploreFunc(cfg *Config) error {
+    url := "https://pokeapi.co/api/v2/location-area/" + cfg.param
+    res, err :=  cfg.api.GetExplore(url)
+    
+    if err != nil {
+        fmt.Println(err.Error())
+        return nil
+    }
+    fmt.Printf("Pokemons encounters in %v : \n", cfg.param)
+    fmt.Println("-------------------------")
+    for _, poke := range res.PokemonEncounters {
+        fmt.Println(poke.Pokemon.Name)
+    }
+    return nil
+}

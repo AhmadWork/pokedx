@@ -10,6 +10,7 @@ type Config struct {
     next string
     prev string
     api pokeapi.PokiClient
+    param string
 }
 
 func main() {
