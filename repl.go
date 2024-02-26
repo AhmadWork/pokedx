@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"strings"
 )
@@ -38,15 +39,18 @@ type CliCommand struct {
     },
     "explore":{
         name: "explore",
-        desc: "show the previous 20 locations of the pokimon world",
+        desc: "Explore the Pokemons of each locations in  the pokimon world",
         callback: exploreFunc,
+        withParam: true,
+    },
+    "catch":{
+        name: "catch",
+        desc: "Gonna Catch'em all right?",
+        callback: catchFunc,
         withParam: true,
     },
 
 }
-
-
-
 
 
 func startRepl(cfg *Config) {
@@ -164,4 +168,35 @@ func exploreFunc(cfg *Config) error {
         fmt.Println(poke.Pokemon.Name)
     }
     return nil
+}
+
+func catchFunc(cfg *Config) error {
+    if _, ok := cfg.pokedex[cfg.param]; ok {
+        fmt.Printf("you already have %v in your Pokedx \n", cfg.param)
+        return nil
+    }
+    url := "https://pokeapi.co/api/v2/pokemon-species/" + cfg.param
+    res, err :=  cfg.api.GetPokeData(url)
+    
+    if err != nil {
+        fmt.Println(err.Error())
+        return nil
+    }
+    fmt.Printf("Throwing a Pokeball at  %v : \n", cfg.param)
+    fmt.Println("-------------------------")
+    isCatched := catchPokemon(res.CaptureRate)
+    if isCatched {
+        fmt.Printf("%v has been catched \n", cfg.param)
+        fmt.Println("Let's add to our PokeDex")
+        cfg.pokedex[cfg.param] = res
+    }else {
+        fmt.Printf("%v has escaped \n", cfg.param)
+        fmt.Println("Try again!")
+    }
+    return nil
+}
+
+func catchPokemon(rate int) bool {
+	weight := float64(rate) / float64(255)
+	return rand.Float64() < weight
 }

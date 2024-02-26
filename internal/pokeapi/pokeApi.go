@@ -36,6 +36,22 @@ type PokiClient struct {
     httpClient http.Client
 }
 
+type Pokemon struct {
+	BaseHappiness int `json:"base_happiness"`
+	CaptureRate   int `json:"capture_rate"`
+	Color         struct {
+		Name string `json:"name"`
+		URL  string `json:"url"`
+	} `json:"color"`
+	EggGroups []struct {
+		Name string `json:"name"`
+		URL  string `json:"url"`
+	} `json:"egg_groups"`
+	EvolutionChain struct {
+		URL string `json:"url"`
+	} `json:"evolution_chain"`
+}
+
 func NewClient(cacheInt time.Duration ) PokiClient {
     return PokiClient{
         Cache: pokecache.NewCache(cacheInt),
@@ -132,6 +148,57 @@ func (p *PokiClient) GetExplore(url string) (PokemonEncountersResponse, error) {
         log.Fatal(err)
         errorMessage := "Data could not be converted somthing went wrong"
         var zeroPoke PokemonEncountersResponse
+        return zeroPoke, errors.New(errorMessage)
+
+    }
+    p.Cache.Add(url, body)
+    return poke, nil
+}
+func (p *PokiClient) GetPokeData(url string) (Pokemon, error) {
+    poke := Pokemon{}
+
+    cRes,ok := p.Cache.Get(url)
+    if ok {
+        error := json.Unmarshal(cRes, &poke)
+        if error != nil {
+		log.Fatal(error)        
+        }
+        return poke, nil
+    }
+
+    res, err := p.httpClient.Get(url)
+
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    if res.StatusCode > 404 {
+        errorMessage := "No area under this name please try again with a correct area"
+        var zeroPoke Pokemon
+        return zeroPoke, errors.New(errorMessage)
+    }
+
+    body, err := io.ReadAll(res.Body)
+	if res.StatusCode > 299 {
+        errorMessage := fmt.Sprintf("Response failed with status code: %d and\nbody: %s\n", res.StatusCode, body)
+        var zeroPoke Pokemon
+        return zeroPoke, errors.New(errorMessage)
+	}
+
+
+	if err != nil {
+        errorMessage := fmt.Sprintf("Response failed with status code: %d and\n", res.StatusCode)
+        var zeroPoke Pokemon
+        return zeroPoke, errors.New(errorMessage)
+
+	}
+
+    err = json.Unmarshal(body, &poke)
+
+    if err != nil {
+        log.Fatal(err)
+        errorMessage := "Data could not be converted somthing went wrong"
+        var zeroPoke Pokemon
         return zeroPoke, errors.New(errorMessage)
 
     }
