@@ -49,6 +49,17 @@ type CliCommand struct {
         callback: catchFunc,
         withParam: true,
     },
+    "inspect":{
+        name: "catch",
+        desc: "Gonna Inspect'em all right?",
+        callback: inspectFunc,
+        withParam: true,
+    },
+    "pokedex":{
+        name: "catch",
+        desc: "Gonna Inspect'em all right?",
+        callback: pokedexFunc,
+    },
 
 }
 
@@ -175,7 +186,7 @@ func catchFunc(cfg *Config) error {
         fmt.Printf("you already have %v in your Pokedx \n", cfg.param)
         return nil
     }
-    url := "https://pokeapi.co/api/v2/pokemon-species/" + cfg.param
+    url := "https://pokeapi.co/api/v2/pokemon/" + cfg.param
     res, err :=  cfg.api.GetPokeData(url)
     
     if err != nil {
@@ -184,7 +195,7 @@ func catchFunc(cfg *Config) error {
     }
     fmt.Printf("Throwing a Pokeball at  %v : \n", cfg.param)
     fmt.Println("-------------------------")
-    isCatched := catchPokemon(res.CaptureRate)
+    isCatched := catchPokemon(res.BaseExperience)
     if isCatched {
         fmt.Printf("%v has been catched \n", cfg.param)
         fmt.Println("Let's add to our PokeDex")
@@ -197,6 +208,37 @@ func catchFunc(cfg *Config) error {
 }
 
 func catchPokemon(rate int) bool {
-	weight := float64(rate) / float64(255)
+	weight := 1.0 - float64(rate) / float64(690)
 	return rand.Float64() < weight
+}
+
+func inspectFunc (cfg *Config) error {
+    poke, ok := cfg.pokedex[cfg.param] 
+    if !ok {
+        fmt.Printf("You have  to catch %v first \n", cfg.param)
+        return nil
+    }
+
+    fmt.Printf("Name: %v \n", cfg.param)
+    fmt.Printf("Height: %v \n", poke.Height)
+    fmt.Printf("Weight: %v \n", poke.Weight)
+    fmt.Println("Stats:")
+    for _,s := range poke.Stats {
+        fmt.Printf("-%v: %v \n", s.Stat.Name, s.BaseStat)
+    }
+    fmt.Println("Types:")
+    for _,t := range poke.Types {
+        fmt.Printf("-%v\n", t.Type.Name)
+    }
+
+    return nil
+}
+
+func pokedexFunc (cfg *Config) error {
+
+    fmt.Println("Your Pokedex:")
+    for k := range cfg.pokedex {
+        fmt.Printf("-%v \n", k)
+    }
+    return nil
 }

@@ -36,21 +36,6 @@ type PokiClient struct {
     httpClient http.Client
 }
 
-type Pokemon struct {
-	BaseHappiness int `json:"base_happiness"`
-	CaptureRate   int `json:"capture_rate"`
-	Color         struct {
-		Name string `json:"name"`
-		URL  string `json:"url"`
-	} `json:"color"`
-	EggGroups []struct {
-		Name string `json:"name"`
-		URL  string `json:"url"`
-	} `json:"egg_groups"`
-	EvolutionChain struct {
-		URL string `json:"url"`
-	} `json:"evolution_chain"`
-}
 
 func NewClient(cacheInt time.Duration ) PokiClient {
     return PokiClient{
