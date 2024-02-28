@@ -4,25 +4,20 @@ import (
 	"time"
 
 	"github.com/AhmadWork/pokedx/internal/pokeapi"
+	"github.com/AhmadWork/pokedx/pkg/pokedx"
 )
 
-type Config struct {
-    next string
-    prev string
-    api pokeapi.PokiClient
-    param string
-    pokedex map[string]pokeapi.Pokemon
-}
 
 
 func main() {
     const cTime = time.Duration(5*time.Minute)
 
-    cfg := Config{
-        next: "https://pokeapi.co/api/v2/location-area/",
-        api: pokeapi.NewClient(cTime),
-        pokedex: make(map[string]pokeapi.Pokemon),
-    }
+    cfg := pokedx.NewConfig(
+         "https://pokeapi.co/api/v2/location-area/",
+        pokeapi.NewClient(cTime),
+        make(map[string]pokeapi.Pokemon),
+    )
 
-        startRepl(&cfg)
+
+        pokedx.StartRepl(&cfg)
 }
